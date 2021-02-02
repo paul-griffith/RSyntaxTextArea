@@ -10,11 +10,25 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-
-import javax.swing.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-//import javax.swing.text.StyleConstants;
 
 import org.fife.ui.rsyntaxtextarea.ErrorStrip;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -46,6 +60,9 @@ public class DemoRootPane extends JRootPane implements HyperlinkListener,
 		scrollPane = new RTextScrollPane(textArea, true);
 		Gutter gutter = scrollPane.getGutter();
 		gutter.setBookmarkingEnabled(true);
+
+		gutter.setSkippedLineNumbers(new HashSet<>(Arrays.asList(2, 3, 4)));
+
 		URL url = getClass().getResource("bookmark.png");
 		gutter.setBookmarkIcon(new ImageIcon(url));
 		getContentPane().add(scrollPane);

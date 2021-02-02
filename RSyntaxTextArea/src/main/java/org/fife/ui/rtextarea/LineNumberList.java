@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -81,6 +82,8 @@ public class LineNumberList extends AbstractGutterComponent
 	 * are displaying a subset of lines in a file.
 	 */
 	private int lineNumberingStartIndex;
+
+	private Set<Integer> skippedLineNumbers;
 
 
 	/**
@@ -363,24 +366,31 @@ public class LineNumberList extends AbstractGutterComponent
 			FontMetrics metrics = g.getFontMetrics();
 			int rhs = getWidth() - rhsBorderWidth;
 			int line = topLine + 1;
+			int skipped = 0;
 			while (y<visibleRect.y+visibleRect.height+ascent && line<=textArea.getLineCount()) {
-				String number = Integer.toString(line + getLineNumberingStartIndex() - 1);
-				int width = metrics.stringWidth(number);
-				g.drawString(number, rhs-width,y);
+				if (skippedLineNumbers.contains(line)) {
+					skipped++;
+					line++;
+					continue;
+				} else {
+					String number = Integer.toString(line + getLineNumberingStartIndex() - 1 - skipped);
+					int width = metrics.stringWidth(number);
+					g.drawString(number, rhs - width, y);
+				}
 				y += cellHeight;
-				if (fm!=null) {
-					Fold fold = fm.getFoldForLine(line-1);
+				if (fm != null) {
+					Fold fold = fm.getFoldForLine(line - 1);
 					// Skip to next line to paint, taking extra care for lines with
 					// block ends and begins together, e.g. "} else {"
-					while (fold!=null && fold.isCollapsed()) {
+					while (fold != null && fold.isCollapsed()) {
 						int hiddenLineCount = fold.getLineCount();
-						if (hiddenLineCount==0) {
+						if (hiddenLineCount == 0) {
 							// Fold parser identified a 0-line fold region... This
 							// is really a bug, but we'll handle it gracefully.
 							break;
 						}
 						line += hiddenLineCount;
-						fold = fm.getFoldForLine(line-1);
+						fold = fm.getFoldForLine(line - 1);
 					}
 				}
 				line++;
@@ -388,9 +398,14 @@ public class LineNumberList extends AbstractGutterComponent
 		}
 		else { // rtl
 			int line = topLine + 1;
+			int skipped = 0;
 			while (y<visibleRect.y+visibleRect.height && line<textArea.getLineCount()) {
-				String number = Integer.toString(line + getLineNumberingStartIndex() - 1);
-				g.drawString(number, rhsBorderWidth, y);
+				if (skippedLineNumbers.contains(line)) {
+					skipped++;
+				} else {
+					String number = Integer.toString(line + getLineNumberingStartIndex() - 1 - skipped);
+					g.drawString(number, rhsBorderWidth, y);
+				}
 				y += cellHeight;
 				if (fm!=null) {
 					Fold fold = fm.getFoldForLine(line-1);
@@ -501,14 +516,15 @@ public class LineNumberList extends AbstractGutterComponent
 
 			// Paint the line number.
 			int index = (topLine+1) + getLineNumberingStartIndex() - 1;
-			String number = Integer.toString(index);
-			if (ltr) {
-				int strWidth = metrics.stringWidth(number);
-				g.drawString(number, rhs-strWidth,y+ascent);
-			}
-			else {
-				int x = rhsBorderWidth;
-				g.drawString(number, x, y+ascent);
+			if (!skippedLineNumbers.contains(index)) {
+				String number = Integer.toString(index);
+				if (ltr) {
+					int strWidth = metrics.stringWidth(number);
+					g.drawString(number, rhs-strWidth,y+ascent);
+				}
+				else {
+					g.drawString(number, rhsBorderWidth, y + ascent);
+				}
 			}
 
 			// The next possible y-coordinate is just after the last line
@@ -588,6 +604,11 @@ public class LineNumberList extends AbstractGutterComponent
 	}
 
 
+	public void setSkippedLineNumbers(Set<Integer> toSkip) {
+		this.skippedLineNumbers = toSkip;
+	}
+
+
 	/**
 	 * Sets the text area being displayed.
 	 *
@@ -664,7 +685,6 @@ public class LineNumberList extends AbstractGutterComponent
 		}
 
 	}
-
 
 	/**
 	 * Listens for events in the text area we're interested in.

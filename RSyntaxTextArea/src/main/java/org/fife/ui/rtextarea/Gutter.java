@@ -20,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.event.ComponentAdapter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -93,6 +94,11 @@ public class Gutter extends JPanel {
 	 * The starting index for line numbers in the gutter.
 	 */
 	private int lineNumberingStartIndex;
+
+	/**
+	 * The set of line numbers to skip past (not counted as lines in the gutter)
+	 */
+	private Set<Integer> skippedLineNumbers;
 
 	/**
 	 * The font used to render line numbers.
@@ -387,6 +393,9 @@ public class Gutter extends JPanel {
 		return lineNumberingStartIndex;
 	}
 
+	public Set<Integer> getSkippedLineNumbers() {
+		return skippedLineNumbers;
+	}
 
 	/**
 	 * Returns <code>true</code> if the line numbers are enabled and visible.
@@ -767,6 +776,15 @@ public class Gutter extends JPanel {
 			lineNumberingStartIndex = index;
 			lineNumberList.setLineNumberingStartIndex(index);
 		}
+	}
+
+
+	public void setSkippedLineNumbers(Set<Integer> skippedLineNumbers) {
+		if (skippedLineNumbers != this.skippedLineNumbers) {
+			this.skippedLineNumbers = skippedLineNumbers;
+			lineNumberList.setSkippedLineNumbers(skippedLineNumbers);
+		}
+
 	}
 
 
