@@ -3,100 +3,115 @@ package org.fife.ui.rsyntaxtextarea.demo;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import org.fife.ui.rtextarea.*;
 import org.fife.ui.rsyntaxtextarea.*;
 
 /**
- * A simple example showing how to do search and replace in a RSyntaxTextArea.
- * The toolbar isn't very user-friendly, but this is just to show you how to use
- * the API.<p>
- *
+ * A simple example showing how to do search and replace in a RSyntaxTextArea. The toolbar isn't very user-friendly, but
+ * this is just to show you how to use the API.<p>
+ * <p>
  * This example uses RSyntaxTextArea 3.0.5.
  */
 public final class FindAndReplaceDemo extends JFrame implements ActionListener {
 
-   private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-   private RSyntaxTextArea textArea;
-   private JTextField searchField;
-   private JCheckBox regexCB;
-   private JCheckBox matchCaseCB;
+	private final RSyntaxTextArea textArea;
+	private JTextField searchField;
+	private JCheckBox regexCB;
+	private JCheckBox matchCaseCB;
 
-   private FindAndReplaceDemo() {
+	private FindAndReplaceDemo() {
 
-      JPanel cp = new JPanel(new BorderLayout());
+		JPanel cp = new JPanel(new BorderLayout());
 
-      textArea = new RSyntaxTextArea(20, 60);
-      textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
-      textArea.setCodeFoldingEnabled(true);
-      RTextScrollPane sp = new RTextScrollPane(textArea);
-      cp.add(sp);
+		textArea = new RSyntaxTextArea(20, 60);
+		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+		textArea.setText("public static void main(String[] args) {\n\t// does nothing\n}");
+		RSyntaxDocument document = (RSyntaxDocument) textArea.getDocument();
+		document.setDocumentFilter(new DocumentFilter() {
+			@Override
+			public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+				throws BadLocationException {
+				if (offset >= 40) {
+					super.replace(fb, offset, length, text, attrs);
+				}
+			}
+		});
+		textArea.setCodeFoldingEnabled(true);
+		RTextScrollPane sp = new RTextScrollPane(textArea);
+		cp.add(sp);
 
-      // Create a toolbar with searching options.
-      JToolBar toolBar = new JToolBar();
-      searchField = new JTextField(30);
-      toolBar.add(searchField);
-      final JButton nextButton = new JButton("Find Next");
-      nextButton.setActionCommand("FindNext");
-      nextButton.addActionListener(this);
-      toolBar.add(nextButton);
-      searchField.addActionListener(e -> nextButton.doClick(0));
-      JButton prevButton = new JButton("Find Previous");
-      prevButton.setActionCommand("FindPrev");
-      prevButton.addActionListener(this);
-      toolBar.add(prevButton);
-      regexCB = new JCheckBox("Regex");
-      toolBar.add(regexCB);
-      matchCaseCB = new JCheckBox("Match Case");
-      toolBar.add(matchCaseCB);
-      cp.add(toolBar, BorderLayout.NORTH);
+		// Create a toolbar with searching options.
+		JToolBar toolBar = new JToolBar();
+		searchField = new JTextField(30);
+		toolBar.add(searchField);
+		final JButton nextButton = new JButton("Replace All");
+		nextButton.setActionCommand("ReplaceAll");
+		nextButton.addActionListener(this);
+		toolBar.add(nextButton);
+		searchField.addActionListener(e -> nextButton.doClick(0));
+		// JButton prevButton = new JButton("Find Previous");
+		// prevButton.setActionCommand("FindPrev");
+		// prevButton.addActionListener(this);
+		// toolBar.add(prevButton);
+		regexCB = new JCheckBox("Regex");
+		toolBar.add(regexCB);
+		matchCaseCB = new JCheckBox("Match Case");
+		toolBar.add(matchCaseCB);
+		cp.add(toolBar, BorderLayout.NORTH);
 
-      setContentPane(cp);
-      setTitle("Find and Replace Demo");
-      setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-      pack();
-      setLocationRelativeTo(null);
+		setContentPane(cp);
+		setTitle("Find and Replace Demo");
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		pack();
+		setLocationRelativeTo(null);
 
-   }
+	}
 
-   @Override
-   public void actionPerformed(ActionEvent e) {
+	@Override
+	public void actionPerformed(ActionEvent e) {
 
-      // "FindNext" => search forward, "FindPrev" => search backward
-      String command = e.getActionCommand();
-      boolean forward = "FindNext".equals(command);
+		// "FindNext" => search forward, "FindPrev" => search backward
+		String command = e.getActionCommand();
+		boolean forward = "ReplaceAll".equals(command);
 
-      // Create an object defining our search parameters.
-      SearchContext context = new SearchContext();
-      String text = searchField.getText();
-      if (text.length() == 0) {
-         return;
-      }
-      context.setSearchFor(text);
-      context.setMatchCase(matchCaseCB.isSelected());
-      context.setRegularExpression(regexCB.isSelected());
-      context.setSearchForward(forward);
-      context.setWholeWord(false);
+		// Create an object defining our search parameters.
+		SearchContext context = new SearchContext();
+		String text = searchField.getText();
+		if (text.length() == 0) {
+			return;
+		}
+		context.setSearchFor(text);
+		context.setReplaceWith("test");
+		context.setMatchCase(matchCaseCB.isSelected());
+		context.setRegularExpression(regexCB.isSelected());
+		context.setSearchForward(forward);
+		context.setSearchWrap(true);
+		context.setWholeWord(false);
 
-      boolean found = SearchEngine.find(textArea, context).wasFound();
-      if (!found) {
-         JOptionPane.showMessageDialog(this, "Text not found");
-      }
+		boolean found = SearchEngine.replaceAll(textArea, context).wasFound();
+		if (!found) {
+			JOptionPane.showMessageDialog(this, "Text not found");
+		}
 
-   }
+	}
 
-   public static void main(String[] args) {
-      // Start all Swing applications on the EDT.
-      SwingUtilities.invokeLater(() -> {
-		 try {
-			String laf = UIManager.getSystemLookAndFeelClassName();
-			UIManager.setLookAndFeel(laf);
-		 } catch (Exception e) { /* never happens */ }
-		 FindAndReplaceDemo demo = new FindAndReplaceDemo();
-		 demo.setVisible(true);
-		 demo.textArea.requestFocusInWindow();
-	  });
-   }
+	public static void main(String[] args) {
+		// Start all Swing applications on the EDT.
+		SwingUtilities.invokeLater(() -> {
+			try {
+				String laf = UIManager.getSystemLookAndFeelClassName();
+				UIManager.setLookAndFeel(laf);
+			} catch (Exception e) { /* never happens */ }
+			FindAndReplaceDemo demo = new FindAndReplaceDemo();
+			demo.setVisible(true);
+			demo.textArea.requestFocusInWindow();
+		});
+	}
 
 }
