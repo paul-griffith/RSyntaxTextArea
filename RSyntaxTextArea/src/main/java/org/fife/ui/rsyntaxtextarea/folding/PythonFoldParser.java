@@ -91,8 +91,12 @@ public class PythonFoldParser implements FoldParser {
 					}
 
 					// A code block without lines should just be removed
-					if (!foundBlock && currentFold != null && !currentFold.removeFromParent()) {
-						folds.remove(folds.size()-1);
+					if (!foundBlock && currentFold != null) {
+						Fold parent = currentFold.getParent();
+						if (!currentFold.removeFromParent()) {
+							folds.remove(folds.size() - 1);
+						}
+						currentFold = parent;
 					}
 				}
 

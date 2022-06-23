@@ -85,4 +85,61 @@ class PythonFoldParserTest {
 		Assertions.assertEquals(1, topLevelFold.getChildCount());
 
 	}
+
+	@Test
+	void testNpeWithMixedContinuedIndentation() {
+		String code = "def main():\n" +
+			"\tdoSomething(\n" +
+			"\t\t\ta,\n" +
+			"\t\t)\n" +
+			"\t\n" +
+			"\n" +
+			"pass";
+
+		RSyntaxTextArea textArea = new RSyntaxTextArea(code);
+		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+
+		PythonFoldParser parser = new PythonFoldParser();
+		List<Fold> folds = parser.getFolds(textArea);
+
+		Assertions.assertEquals(1, folds.size());
+
+		// First top-level fold is def main()
+		Fold topLevelFold = folds.get(0);
+		Assertions.assertEquals(FoldType.CODE, topLevelFold.getFoldType());
+		Assertions.assertEquals(code.indexOf("def main"), topLevelFold.getStartOffset());
+		Assertions.assertEquals(0, topLevelFold.getChildCount());
+	}
+
+
+	@Test
+	void testFallbackWithMixedContinuedIndentation() {
+		String code = "class MyClass():\n" +
+			"\tdef main():\n" +
+			"\t\tdoSomething(\n" +
+			"\t\t\t\ta,\n" +
+			"\t\t\t)\n" +
+			"\n" +
+			"\t\tdef child():\n" +
+			"\t\t\tpass\n" +
+			"\n" +
+			"\tdef classMember():\n" +
+			"\t\tpass\n";
+
+		RSyntaxTextArea textArea = new RSyntaxTextArea(code);
+		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+
+		PythonFoldParser parser = new PythonFoldParser();
+		List<Fold> folds = parser.getFolds(textArea);
+
+		Assertions.assertEquals(1, folds.size());
+
+		// First top-level fold is class definition
+		Fold classFold = folds.get(0);
+		Assertions.assertEquals(FoldType.CODE, classFold.getFoldType());
+		Assertions.assertEquals(0, classFold.getStartOffset());
+		Assertions.assertEquals(2, classFold.getChildCount());
+
+		Assertions.assertEquals(2, classFold.getChildCount());
+	}
 }
